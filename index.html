@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ফিজিক্স ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "তড়িচ্চালক শক্তির একক-",
+          options: {
+            a: "জুল",
+            b: "ভোল্ট",
+            c: "কুলম্ব",
+            d: "অ্যাম্পিয়ার",
+          },
+          correct: "b",
+          explanation:
+            "<p>তড়িচ্চালক শক্তি (Electromotive Force, EMF) হলো একক আধানকে বর্তনীর এক প্রান্ত থেকে অন্য প্রান্তে নিয়ে যেতে যে কাজ সম্পন্ন হয়। এটি আসলে এক প্রকারের বিভব পার্থক্য। তাই এর এসআই একক হলো <b>ভোল্ট (Volt)</b>। জুল হলো কাজ বা শক্তির একক, কুলম্ব হলো চার্জের একক এবং অ্যাম্পিয়ার হলো তড়িৎ প্রবাহের একক।</p>",
+        },
+        {
+          id: 2,
+          question: "ভোল্টের সমতুল্য-",
+          options: {
+            a: "JA⁻¹s⁻¹",
+            b: "JA⁻¹s",
+            c: "JAs⁻¹",
+            d: "JAs",
+          },
+          correct: "a",
+          explanation:
+            "<p>ভোল্ট (V) হলো বিভব পার্থক্য বা তড়িচ্চালক শক্তির একক।</p><p>আমরা জানি, বিভব পার্থক্য (V) = কাজ (W) / চার্জ (Q)।</p><p>কাজের একক জুল (J)।</p><p>চার্জ (Q) = তড়িৎ প্রবাহ (I) × সময় (t)। চার্জের একক কুলম্ব (C)।</p><p>সুতরাং, Q = অ্যাম্পিয়ার (A) × সেকেন্ড (s) = As।</p><p>তাহলে, ভোল্ট (V) = J / (As) = <b>J A⁻¹ s⁻¹</b>।</p>",
+        },
+        {
+          id: 3,
+          question: "তড়িচ্চালক বলের একক-",
+          options: {
+            a: "Js⁻¹",
+            b: "JC⁻¹",
+            c: "Js",
+            d: "JV⁻¹",
+          },
+          correct: "b",
+          explanation:
+            "<p>তড়িচ্চালক বল (Electromotive Force, EMF) হলো একক ধনাত্মক চার্জকে একটি বর্তনীর সম্পূর্ণ পথ অতিক্রম করাতে যে পরিমাণ কাজ সম্পন্ন হয়।</p><p>সুতরাং, EMF = কাজ / চার্জ।</p><p>কাজের এসআই একক হলো জুল (J), এবং চার্জের এসআই একক হলো কুলম্ব (C)।</p><p>অতএব, তড়িচ্চালক বলের একক হলো <b>জুল প্রতি কুলম্ব (JC⁻¹)</b>, যা ভোল্ট (V) এর সমতুল্য।</p>",
+        },
+        {
+          id: 4,
+          question: "কোষের বিভব পার্থক্য-",
+          options: {
+            a: "তড়িচ্চালক শক্তির চেয়ে কম",
+            b: "বেশি",
+            c: "সমান",
+            d: "নষ্ট ভোল্টের সমান",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি তড়িৎ কোষ যখন বর্তনীতে তড়িৎ প্রবাহ সরবরাহ করে, তখন তার অভ্যন্তরীণ রোধের (r) কারণে কিছু বিভব নষ্ট হয়। এই নষ্ট হওয়া বিভবকে 'নষ্ট ভোল্ট' (Ir) বলে, যেখানে I হলো বর্তনীর তড়িৎ প্রবাহ।</p><p>কোষের তড়িচ্চালক শক্তি (E) এবং বহিঃস্থ বর্তনীর বিভব পার্থক্য (V) এর মধ্যে সম্পর্ক হলো: <b>V = E - Ir</b>।</p><p>যেহেতু Ir এর মান সাধারণত ধনাত্মক (যদি I > 0 হয়), তাই <b>কোষের বিভব পার্থক্য (V) তড়িচ্চালক শক্তি (E) এর চেয়ে কম</b> হয়। শুধুমাত্র যখন কোনো তড়িৎ প্রবাহ থাকে না (I=0), তখন V=E হয়।</p>",
+        },
+        {
+          id: 5,
+          question: "নষ্ট ভোল্ট (Ir)-এর মান-",
+          options: {
+            a: "Ir = E – V",
+            b: "Ir = E + V",
+            c: "Ir = VE",
+            d: "Ir = E/V",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি তড়িৎ কোষের তড়িচ্চালক শক্তি (E), তার দুই প্রান্তের বিভব পার্থক্য (V) এবং অভ্যন্তরীণ রোধের (r) কারণে সৃষ্ট নষ্ট ভোল্ট (Ir) এর মধ্যে সম্পর্ক হলো:</p><p>E = V + Ir</p><p>এই সমীকরণ থেকে নষ্ট ভোল্ট (Ir) এর মান বের করলে পাই: <b>Ir = E – V</b>।</p>",
+        },
+        {
+          id: 6,
+          question: "বহিঃস্থ বর্তনীতে তড়িৎ প্রবাহ না থাকলে বিভব পার্থক্য-",
+          options: {
+            a: "E = V",
+            b: "E ∝ I",
+            c: "E > V",
+            d: "E < V",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি তড়িৎ কোষের তড়িচ্চালক শক্তি (E), তার দুই প্রান্তের বিভব পার্থক্য (V) এবং অভ্যন্তরীণ রোধের (r) কারণে সৃষ্ট নষ্ট ভোল্ট (Ir) এর মধ্যে সম্পর্ক হলো: E = V + Ir।</p><p>যখন বহিঃস্থ বর্তনীতে কোনো <b>তড়িৎ প্রবাহ থাকে না</b>, তখন I = 0।</p><p>এই অবস্থায়, Ir = 0, সুতরাং সমীকরণটি দাঁড়ায়: <b>E = V</b>।</p><p>অর্থাৎ, বর্তনী খোলা থাকলে বা কোনো প্রবাহ না থাকলে কোষের দুই প্রান্তের বিভব পার্থক্য তার তড়িচ্চালক শক্তির সমান হয়।</p>",
+        },
+        {
+          id: 7,
+          question:
+            "ব্যাটারির ইএমএফ ও অভ্যন্থরীন রোধ যথাক্রমে (E, r) ও বহিঃস্থ R রোধে সর্বাধিক ক্ষমতা-",
+          options: {
+            a: "R = r",
+            b: "R = √2r",
+            c: "R = 2r",
+            d: "R = 4r",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি উৎসের দ্বারা বহিঃস্থ বর্তনীতে সরবরাহকৃত ক্ষমতার সর্বোচ্চকরণের শর্ত (Maximum Power Transfer Theorem) অনুযায়ী, একটি উৎস দ্বারা বহিঃস্থ রোধে (R) সর্বাধিক ক্ষমতা সরবরাহ করা হয় যখন বহিঃস্থ রোধের মান উৎসের অভ্যন্তরীণ রোধের (r) সমান হয়।</p><p>অর্থাৎ, <b>R = r</b> হলে বহিঃস্থ রোধে সরবরাহকৃত ক্ষমতা সর্বাধিক হয়।</p>",
+        },
+        {
+          id: 8,
+          question: "দুটি কোষের শ্রেণি সমবায়ে প্রবাহমাত্রা-",
+          options: {
+            a: "Iₛ = 2E/(2r+R)",
+            b: "Iₛ = 2E/(r+2R)",
+            c: "Iₚ = 2E/(2r+R)",
+            d: "Iₚ = 2E/(r+2R)",
+          },
+          correct: "a",
+          explanation:
+            "<p>যদি দুটি অভিন্ন কোষ (প্রত্যেকটির EMF E এবং অভ্যন্তরীণ রোধ r) শ্রেণি সমবায়ে যুক্ত থাকে এবং একটি বহিঃস্থ রোধ R এর সাথে সংযুক্ত থাকে:</p><p>শ্রেণি সমবায়ে মোট তড়িচ্চালক শক্তি (E<sub>total</sub>) = E + E = 2E।</p><p>শ্রেণি সমবায়ে মোট অভ্যন্তরীণ রোধ (r<sub>total</sub>) = r + r = 2r।</p><p>মোট রোধ = মোট অভ্যন্তরীণ রোধ + বহিঃস্থ রোধ = 2r + R।</p><p>ওহমের সূত্রানুযায়ী, প্রবাহমাত্রা (I<sub>s</sub>) = E<sub>total</sub> / মোট রোধ = <b>2E / (2r + R)</b>।</p>",
+        },
+        {
+          id: 9,
+          question: "n সংখ্যক কোষের শ্রেণি সমবায় সূত্র-",
+          options: {
+            a: "Iₛ = E/(r+nR)",
+            b: "Iₛ = nE/(nr+R)",
+            c: "Iₛ = nE/(r+nR)",
+            d: "Iₛ = E/(r+R)",
+          },
+          correct: "b",
+          explanation:
+            "<p>যদি n সংখ্যক অভিন্ন কোষ (প্রত্যেকটির EMF E এবং অভ্যন্তরীণ রোধ r) শ্রেণি সমবায়ে যুক্ত থাকে এবং একটি বহিঃস্থ রোধ R এর সাথে সংযুক্ত থাকে:</p><p>শ্রেণি সমবায়ে মোট তড়িচ্চালক শক্তি (E<sub>total</sub>) = nE।</p><p>শ্রেণি সমবায়ে মোট অভ্যন্তরীণ রোধ (r<sub>total</sub>) = nr।</p><p>মোট রোধ = মোট অভ্যন্তরীণ রোধ + বহিঃস্থ রোধ = nr + R।</p><p>ওহমের সূত্রানুযায়ী, প্রবাহমাত্রা (I<sub>s</sub>) = E<sub>total</sub> / মোট রোধ = <b>nE / (nr + R)</b>।</p>",
+        },
+        {
+          id: 10,
+          question: "অভ্যন্তরীণ রোধ বৃদ্ধিতে প্রবাহমাত্রা-",
+          options: {
+            a: "সমানুপাতে বাড়ে",
+            b: "সমানুপাতে কমে",
+            c: "ব্যস্তানুপাতে কম",
+            d: "ব্যস্তানুপাতে বাড়ে",
+          },
+          correct: "c",
+          explanation:
+            "<p>একটি বর্তনীতে মোট প্রবাহমাত্রা (I) হলো I = E / (R + r), যেখানে E হলো তড়িচ্চালক শক্তি, R হলো বহিঃস্থ রোধ এবং r হলো অভ্যন্তরীণ রোধ।</p><p>এই সূত্র থেকে দেখা যায়, প্রবাহমাত্রা (I) মোট রোধের (R+r) ব্যস্তানুপাতিক। যদি অভ্যন্তরীণ রোধ (r) বৃদ্ধি পায় (এবং E ও R স্থির থাকে), তাহলে মোট রোধ বৃদ্ধি পাবে, এবং এর ফলে <b>প্রবাহমাত্রা ব্যস্তানুপাতে কমে যাবে</b>।</p>",
+        },
+        {
+          id: 11,
+          question: "V বিভবে t সময়ে Q আধান পরিবাহিত। তড়িৎ ক্ষমতা-",
+          options: {
+            a: "VQ/t",
+            b: "Qt",
+            c: "VQ",
+            d: "t/VQ",
+          },
+          correct: "a",
+          explanation:
+            "<p>তড়িৎ ক্ষমতা (P) হলো প্রতি একক সময়ে সম্পাদিত কাজ বা ব্যয়িত শক্তি।</p><p>সম্পাদিত কাজ (W) = VQ (বিভব পার্থক্য × আধান)।</p><p>ক্ষমতা (P) = কাজ (W) / সময় (t)।</p><p>সুতরাং, P = <b>VQ/t</b>।</p>",
+        },
+        {
+          id: 12,
+          question: "সমান্তরাল সমবায়ে nR>>r হলে প্রবাহমাত্রা-",
+          options: {
+            a: "E/R",
+            b: "nE/R",
+            c: "E/nR",
+            d: "nE/nR",
+          },
+          correct: "a",
+          explanation:
+            "<p>যদি n সংখ্যক অভিন্ন কোষ (প্রত্যেকটির EMF E এবং অভ্যন্তরীণ রোধ r) সমান্তরাল সমবায়ে যুক্ত থাকে এবং একটি বহিঃস্থ রোধ R এর সাথে সংযুক্ত থাকে:</p><p>সমান্তরাল সমবায়ে মোট তড়িচ্চালক শক্তি (E<sub>total</sub>) = E (কারণ বিভব একই থাকে)।</p><p>সমান্তরাল সমবায়ে মোট অভ্যন্তরীণ রোধ (r<sub>total</sub>) = r/n।</p><p>মোট রোধ = মোট অভ্যন্তরীণ রোধ + বহিঃস্থ রোধ = r/n + R।</p><p>প্রবাহমাত্রা (I<sub>p</sub>) = E<sub>total</sub> / মোট রোধ = E / (r/n + R)।</p><p>যদি nR >> r হয়, অর্থাৎ R এর মান r/n এর চেয়ে অনেক বড় হয়, তাহলে r/n কে উপেক্ষা করা যায়।</p><p>সুতরাং, প্রবাহমাত্রা (I<sub>p</sub>) ≈ <b>E/R</b>।</p>",
+        },
+        {
+          id: 13,
+          question: "E emf বিশিষ্ট চারটি কোষ সমান্তরালে। তুল্য emf-",
+          options: {
+            a: "4E",
+            b: "E/4",
+            c: "E",
+            d: "শূন্য",
+          },
+          correct: "c",
+          explanation:
+            "<p>সমান্তরাল সমবায়ে যুক্ত অভিন্ন কোষগুলির (যদি তাদের অভ্যন্তরীণ রোধও অভিন্ন হয়) <b>তুল্য তড়িচ্চালক শক্তি</b> প্রতিটি কোষের তড়িচ্চালক শক্তির <b>সমান</b> হয়। এর কারণ হলো, সমান্তরাল সংযোগে প্রতিটি কোষের বিভব পার্থক্য একই থাকে।</p><p>সুতরাং, E emf বিশিষ্ট চারটি কোষ সমান্তরালে যুক্ত থাকলে তুল্য emf <b>E</b> হবে।</p>",
+        },
+        {
+          id: 14,
+          question:
+            "একটি সার্কিটে 4 ohm ও 6 ohm রোধ বিশিষ্ট দুটি রোধ সমান্তরালে আছে – নিচের কোনটি সঠিক?",
+          options: {
+            a: "দুটি রোধে তড়িৎ প্রবাহমাত্রা সমান",
+            b: "6 ohm রোধের মধ্য দিয়ে বেশি তড়িৎ প্রবাহ প্রবাহিত হবে",
+            c: "উভয়ের দুই প্রান্তে বিভব পার্থক্য সমান",
+            d: "5 রোধের পরিবাহকত্ব কম",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>সমান্তরাল সমবায়ে</b> যুক্ত উপাদানের ক্ষেত্রে <b>সকল উপাদানের দুই প্রান্তে বিভব পার্থক্য সমান</b> থাকে। এটি সমান্তরাল বর্তনীর একটি মৌলিক বৈশিষ্ট্য।</p><p>তড়িৎ প্রবাহের ক্ষেত্রে, যেহেতু I = V/R, বিভব পার্থক্য সমান হলেও রোধের মানের উপর প্রবাহ নির্ভর করে। কম রোধের মধ্য দিয়ে বেশি প্রবাহ যায় এবং বেশি রোধের মধ্য দিয়ে কম প্রবাহ যায়। তাই 4 ohm রোধের মধ্য দিয়ে বেশি তড়িৎ প্রবাহ হবে, 6 ohm রোধের মধ্য দিয়ে কম।</p>",
+        },
+        {
+          id: 15,
+          question:
+            "একটি ব্যাটারির মধ্যে তড়িৎ প্রবাহ i দ্বারা প্রকাশ করা হয়। ঐ ব্যাটারির তাড়িচ্চালক বল, এর দুই প্রান্তের বিভব পার্থক্যের সমান কখন হবে?",
+          options: {
+            a: "সবসময়",
+            b: "কখনোই না",
+            c: "শুধুমাত্র যখন i=0",
+            d: "শুধুমাত্র যখন i = ধ্রুবক",
+          },
+          correct: "c",
+          explanation:
+            "<p>একটি ব্যাটারির তড়িচ্চালক বল (E), এর দুই প্রান্তের বিভব পার্থক্য (V) এবং অভ্যন্তরীণ রোধ (r) এর কারণে সৃষ্ট নষ্ট ভোল্ট (ir) এর মধ্যে সম্পর্ক হলো: E = V + ir।</p><p>যদি <b>তড়িৎ প্রবাহ (i) শূন্য হয়</b> (অর্থাৎ, বর্তনী খোলা থাকে বা কোনো বিদ্যুৎ প্রবাহিত না হয়), তাহলে নষ্ট ভোল্ট ir = 0।</p><p>এই অবস্থায়, E = V। অর্থাৎ, ব্যাটারির তড়িচ্চালক বল তার দুই প্রান্তের বিভব পার্থক্যের সমান হয়।</p>",
+        },
+        {
+          id: 16,
+          question:
+            "1টি কোষের সাথে অভ্যন্তরীণ রোধের তুলনায় বেশি মানের রোধ যুক্ত করা হলে i প্রবাহ পাওয়া যায়। একটির হলে এরূপ 3টি কোষের সমান্তরাল সংযোগ যুক্ত করা হলে প্রবাহ হবে-",
+          options: {
+            a: "0",
+            b: "i/3",
+            c: "i",
+            d: "3i",
+          },
+          correct: "c",
+          explanation:
+            "<p>ধরি, প্রতিটি কোষের EMF E এবং অভ্যন্তরীণ রোধ r। বহিঃস্থ রোধ R।</p><p>১টি কোষের জন্য প্রবাহ: I = E / (R + r)।</p><p>প্রশ্নানুসারে, R >> r। তাই, I ≈ E/R। এটি হলো একক কোষের জন্য প্রবাহ (i)।</p><p>এখন, 3টি কোষ সমান্তরাল সংযোগে যুক্ত করা হলে:</p><ul><li>তুল্য EMF = E (সমান্তরাল সংযোগে EMF একই থাকে)।</li><li>তুল্য অভ্যন্তরীণ রোধ = r/3 (সমান্তরাল সংযোগে রোধের সূত্র 1/R<sub>eq</sub> = 1/r + 1/r + 1/r)।</li></ul><p>মোট প্রবাহ (I') = তুল্য EMF / (বহিঃস্থ রোধ + তুল্য অভ্যন্তরীণ রোধ) = E / (R + r/3)।</p><p>যেহেতু R >> r, তাই R >> r/3। অর্থাৎ, r/3 কে উপেক্ষা করা যায়।</p><p>সুতরাং, I' ≈ E/R।</p><p>প্রথম ক্ষেত্রের প্রবাহ (i) = E/R। তাই, 3টি কোষ সমান্তরালে যুক্ত করলে প্রবাহ প্রায় <b>i</b> ই থাকবে। এই বিন্যাসটি মূলত ব্যাটারির আয়ু (capacity) বাড়াতে সাহায্য করে, প্রবাহমাত্রা খুব বেশি বাড়ায় না যদি বহিঃস্থ রোধ অভ্যন্তরীণ রোধের চেয়ে অনেক বেশি হয়।</p>",
+        },
+        {
+          id: 17,
+          question:
+            "শ্রেণি সমবায়ে যুক্ত তিনটি রোধের সম্পর্ক যদি R1 > R2 > R3 হয়, তবে তাদের মধ্য দিয়ে তড়িৎ প্রবাহের সম্পর্ক কী?",
+          options: {
+            a: "I1 = I2 = I3",
+            b: "I1 > I2 > I3",
+            c: "I1 < I2 < I3",
+            d: "I1 > I3 > I2",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>শ্রেণি সমবায়ে</b> যুক্ত রোধগুলির ক্ষেত্রে একটি মৌলিক বৈশিষ্ট্য হলো, <b>বর্তনীতে প্রতিটি রোধের মধ্য দিয়ে একই তড়িৎ প্রবাহ প্রবাহিত হয়</b>। যদিও রোধের মান ভিন্ন হতে পারে, কিন্তু যেহেতু চার্জের প্রবাহের জন্য একটি মাত্র পথ থাকে, তাই চার্জ একই হারে প্রতিটি রোধের মধ্য দিয়ে যায়।</p><p>সুতরাং, I1 = I2 = I3 হবে।</p>",
+        },
+        {
+          id: 18,
+          question:
+            "একটি অজানা রোধের সাথে একটি 3 ohm রোধ সমান্তরালে যুক্ত করা হলো। বর্তনীর তুল্য রোধ কত?",
+          options: {
+            a: "3 ohm এর বেশি",
+            b: "3 ohm এর কম",
+            c: "3 ohm এর সমান",
+            d: "অজানা রোধের সমান",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>সমান্তরাল সমবায়ে</b> যুক্ত রোধগুলির ক্ষেত্রে তুল্য রোধ (R<sub>p</sub>) এর সূত্র হলো: 1/R<sub>p</sub> = 1/R₁ + 1/R₂ + ...।</p><p>এই সূত্রের একটি গুরুত্বপূর্ণ বৈশিষ্ট্য হলো, সমান্তরাল সমবায়ে যুক্ত তুল্য রোধের মান <b>সর্বদা সংযুক্ত রোধগুলির মধ্যে ক্ষুদ্রতম রোধের চেয়েও কম হয়</b>।</p><p>এখানে, একটি 3 ওহম রোধের সাথে একটি অজানা রোধ সমান্তরালে যুক্ত করা হয়েছে। সুতরাং, তুল্য রোধের মান অবশ্যই <b>3 ওহম এর কম</b> হবে।</p>",
+        },
+        {
+          id: 19,
+          question:
+            "একটি রোধের এক প্রান্তে একটি ব্যাটারির ধনাত্মক প্রান্ত লাগানো রয়েছে। অন্য একটি রোধ শ্রেণিসংযোগে এ রোধের সাথে লাগিয়ে ব্যাটারির ঋণাত্মক প্রান্ত লাগানো রয়েছে। কোনটির মধ্য দিয়ে ধনাত্মক চার্জ বা হোল প্রবাহ হবে?",
+          options: {
+            a: "প্রথম রোধ",
+            b: "দ্বিতীয় রোধ",
+            c: "উভয় রোধ",
+            d: "কোনোটিই নয়",
+          },
+          correct: "d",
+          explanation:
+            "<p>প্রচলিত তড়িৎ প্রবাহের দিক <b>ধনাত্মক চার্জের প্রবাহের দিক</b> হিসেবে সংজ্ঞায়িত করা হয়, অর্থাৎ উচ্চ বিভব থেকে নিম্ন বিভবের দিকে। তবে, বেশিরভাগ পরিবাহী পদার্থে (যেমন ধাতু) <b>তড়িৎ প্রবাহের প্রকৃত বাহক হলো ইলেকট্রন</b>, যা ঋণাত্মক চার্জযুক্ত। ইলেকট্রনগুলি ঋণাত্মক প্রান্ত থেকে ধনাত্মক প্রান্তের দিকে (নিম্ন বিভব থেকে উচ্চ বিভবের দিকে) প্রবাহিত হয়।</p><p>প্রশ্নটি 'ধনাত্মক চার্জ বা হোল প্রবাহ' নিয়ে। ধাতব পরিবাহীতে (যেগুলো রোধ তৈরি করে) সাধারণত হোল প্রবাহ হয় না। হোল প্রবাহ মূলত অর্ধপরিবাহীতে (যেমন সিলিকন, জার্মেনিয়াম) দেখা যায়। সাধারণ রোধগুলো ধাতব তার দিয়ে তৈরি হয়, যেখানে ইলেকট্রন প্রবাহ হয়।</p><p>যদি প্রশ্নটি 'প্রচলিত তড়িৎ প্রবাহের দিক' সম্পর্কে হতো, তাহলে উত্তর হতো 'উভয় রোধ' কারণ তড়িৎ প্রবাহ উভয় রোধের মধ্য দিয়েই হয়। কিন্তু যেহেতু এটি 'ধনাত্মক চার্জ বা হোল প্রবাহ' উল্লেখ করেছে এবং রোধগুলো সাধারণত ধাতব, তাই এর মধ্য দিয়ে প্রকৃত হোল প্রবাহ ঘটে না। তাই, <b>কোনোটিই নয়</b>, কারণ পরিবাহীতে ইলেকট্রন প্রবাহই মূল।</p>",
+        },
+        {
+          id: 20,
+          question: "নিচের কোনটি সঠিক নয়?",
+          options: {
+            a: "C<sub>p</sub> = C₁ + C₂",
+            b: "1/C<sub>s</sub> = 1/C₁ + 1/C₂",
+            c: "R<sub>s</sub> = R₁ + R₂",
+            d: "R<sub>p</sub> = R₁ + R₂",
+          },
+          correct: "d",
+          explanation:
+            "<p>চলো আমরা ধারক (Capacitor) আর রোধের (Resistor) বিভিন্ন সমবায়ের সূত্রগুলো দেখে নিই:</p><ul><li><b>(a) C<sub>p</sub> = C₁ + C₂:</b> এটা ধারকের সমান্তরাল সমবায়ের তুল্য ধারকত্বের সূত্র। অর্থাৎ, যখন একাধিক ধারককে সমান্তরালভাবে যুক্ত করা হয়, তখন তাদের মোট ধারকত্ব হয় তাদের আলাদা আলাদা ধারকত্বের যোগফল। তাই এই অপশনটি সঠিক।</li><li><b>(b) 1/C<sub>s</sub> = 1/C₁ + 1/C₂:</b> এটা ধারকের শ্রেণী সমবায়ের তুল্য ধারকত্বের সূত্র। যদি কয়েকটি ধারককে শ্রেণীতে যুক্ত করা হয়, তাহলে তাদের মোট ধারকত্বের উল্টো মান (ব্যস্তানুপাতিক) হয় তাদের আলাদা আলাদা ধারকত্বের উল্টো মানের যোগফল। এই অপশনটিও সঠিক।</li><li><b>(c) R<sub>s</sub> = R₁ + R₂:</b> এটা রোধের শ্রেণী সমবায়ের তুল্য রোধের সূত্র। যখন রোধগুলোকে শ্রেণীতে যুক্ত করা হয়, তখন মোট রোধ হয় তাদের আলাদা আলাদা রোধের যোগফল। তাই এই অপশনটিও সঠিক।</li><li><b>(d) R<sub>p</sub> = R₁ + R₂:</b> এটা রোধের সমান্তরাল সমবায়ের তুল্য রোধের সূত্র <b>নয়</b>। রোধের সমান্তরাল সমবায়ে, মোট রোধের উল্টো মান (ব্যস্তানুপাতিক) হয় আলাদা আলাদা রোধের উল্টো মানের যোগফল। মানে, সূত্রটা হলো 1/R<sub>p</sub> = 1/R₁ + 1/R₂। তাই, R<sub>p</sub> = R₁ + R₂ - এই সূত্রটি সঠিক নয়।</li></ul><p>সুতরাং, সঠিক উত্তর হলো <b>(d) R<sub>p</sub> = R₁ + R₂</b>, কারণ এটি সঠিক সূত্র নয়।</p>",
+        },
+        {
+          id: 21,
+          question:
+            "প্রতিটি 2V ও 2Ω অভ্যন্তরীণ রোধবিশিষ্ট মোট 45টি বৈদ্যুতিক কোষ আছে। কীভাবে সাজালে সর্বোচ্চ বিদ্যুৎ পাওয়া যাবে?",
+          options: {
+            a: "সারি 3টি, কোষ 15টি/সারি",
+            b: "সারি 1টি, কোষ 4টি/সারি",
+            c: "সারি 9টি, কোষ 1টি/সারি",
+            d: "কোনোটিই নয়",
+          },
+          correct: "d",
+          explanation:
+            "<p>সর্বোচ্চ বিদ্যুৎ প্রবাহ পাওয়ার জন্য কোষগুলির বিন্যাস এমন হতে হবে যাতে বাহ্যিক রোধ (R) এর মান মোট অভ্যন্তরীণ রোধের (R<sub>int_total</sub>) মানের কাছাকাছি হয়।</p><p>ধরি, n সংখ্যক কোষকে m টি সারিতে (সমান্তরাল) সাজানো হয়েছে, যেখানে প্রতিটি সারিতে p সংখ্যক কোষ (শ্রেণী) আছে।<br>মোট কোষের সংখ্যা = m * p = 45।</p><p>মোট তড়িচ্চালক শক্তি (E<sub>total</sub>) = pE (যেহেতু m সংখ্যক সারি সমান্তরালভাবে যুক্ত থাকে, তাই মোট EMF একটি সারির EMF এর সমান)।</p><p>মোট অভ্যন্তরীণ রোধ (r<sub>total</sub>) = (pr)/m (কারণ প্রতিটি সারিতে pr রোধ থাকে এবং m সংখ্যক সারি সমান্তরালভাবে যুক্ত থাকে)।</p><p>বর্তনীতে প্রবাহমাত্রা (I) = E<sub>total</sub> / (R + r<sub>total</sub>) = pE / (R + pr/m)।</p><p>সর্বোচ্চ প্রবাহের জন্য, বাহ্যিক রোধ R এর মান মোট অভ্যন্তরীণ রোধ pr/m এর কাছাকাছি হতে হয়। অর্থাৎ, <b>R ≈ pr/m</b>।</p><p>এই প্রশ্নটিতে বাহ্যিক রোধ R এর মান দেওয়া নেই। R এর মান না জেনে সর্বোচ্চ প্রবাহের জন্য বিন্যাস নির্ধারণ করা কঠিন।</p><p>যদি R এর মান উল্লেখ না থাকে এবং শুধু 'সর্বোচ্চ বিদ্যুৎ পাওয়া যাবে' বলে, তাহলে সাধারণত বোঝায় যে অভ্যন্তরীণ রোধকে সর্বনিম্ন রাখতে হবে বা উৎসের শক্তিকে সর্বোচ্চ করতে হবে।</p><p>যদি R খুব ছোট হয়, তাহলে r/m ছোট রাখতে হবে, যার জন্য m বড় হওয়া ভালো (অনেক সমান্তরাল সারি)। যদি R খুব বড় হয়, তাহলে pE বড় রাখতে হবে, যার জন্য p বড় হওয়া ভালো (অনেক শ্রেণী কোষ)।</p><p>যদি R এর মান 0 হয় (শর্ট সার্কিট), তাহলে I = pE / (pr/m) = Em/r। সর্বোচ্চ প্রবাহের জন্য m কে সর্বোচ্চ করতে হবে, অর্থাৎ m=45, p=1 (45টি সমান্তরাল সারি, প্রতিটি সারিতে 1টি কোষ)।</p><p>যদি R এর মান অসীম হয় (খোলা বর্তনী), তাহলে I=0।</p><p>যেহেতু R এর মান নির্দিষ্ট করা নেই এবং কোনো বিকল্প R এর উপর নির্ভর করে না, তাই 'd' (কোনোটিই নয়) সঠিক উত্তর।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                    <label class="option" data-option="${option}">
+                    <div class="circle">${option}</div>
+                    <span class="option-text">${question.options[option]}</span>
+                    </label>`;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
